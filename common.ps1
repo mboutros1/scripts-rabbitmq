@@ -31,8 +31,9 @@ function SetBaseVariables {
 function Install() {
 
     Stop-Process -name "epmd" -Force -ErrorAction SilentlyContinue
-    $env:ERLANG_HOME = [System.Environment]::GetEnvironmentVariable("ERLANG_HOME", "Machine")
-    if ($env:ERLANG_HOME -eq $null) {
+    $erlangkey = Get-ChildItem HKLM:\SOFTWARE\Wow6432Node\Ericsson\Erlang -ErrorAction SilentlyContinue   
+    
+    if ($null -eq $erlangkey) {
         $destFile = (Join-Path (Get-Location) otp_win64_$erLang.exe)
         if ( -not (Test-Path $destFile) ) {
             Write-Host "Downloading  Erlang http://erlang.org/download/otp_win64_$erLang.exe"
@@ -41,16 +42,15 @@ function Install() {
         }
         Write-Host "Installing Erlang"
         & $destFile | Out-Null
+        $erHome = ((Get-ChildItem HKLM:\SOFTWARE\Wow6432Node\Ericsson\Erlang)[0] | Get-ItemProperty).'(default)'
     }
-    $ERLANG_HOME = ((Get-ChildItem HKLM:\SOFTWARE\Wow6432Node\Ericsson\Erlang)[0] | Get-ItemProperty).'(default)'
     $env:ERLANG_HOME = [System.Environment]::GetEnvironmentVariable("ERLANG_HOME", "Machine")
-    if ($env:ERLANG_HOME -eq $null -and $ERLANG_HOME -ne $null) {
-        [Environment]::SetEnvironmentVariable("ERLANG_HOME", $ERLANG_HOME, "Machine")
-        $env:ERLANG_HOME = $ERLANG_HOME
+    if ($env:ERLANG_HOME -eq $null -and $null -ne $erHome) {
+        [Environment]::SetEnvironmentVariable("ERLANG_HOME", $erHome, "Machine")
+        $env:ERLANG_HOME = $erHome
     }
-    elseif ($ERLANG_HOME -eq $null) { $ERLANG_HOME = $env:ERLANG_HOME }
-    
-    if ($ERLANG_HOME -eq $null) {
+ 
+    if ($null -eq $erHome) {
         Write-Host "Erlang was not installed successfully, try restart the shell an rerun the script."
         return
     } 
@@ -61,8 +61,7 @@ function Install() {
         Write-Host "Downloading  RabbitMQ https://github.com/rabbitmq/rabbitmq-server/releases/download/v$rmqVer/rabbitmq-server-$rmqVer.exe"
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest https://github.com/rabbitmq/rabbitmq-server/releases/download/v$rmqVer/rabbitmq-server-$rmqVer.exe -OutFile $destFile
-    }
-
+    } 
     If (Get-Service "RabbitmQ" -ErrorAction SilentlyContinue) {
     }
     else {
@@ -73,7 +72,10 @@ function Install() {
     }
     
     Write-Host "Erlang home $env:ERLANG_HOME"
-
+    if (-not (Test-Path $binPath)) {
+        Write-Host  "Couldn't find RabbitMQ installation folder $binPath"
+        return
+    }
     Write-Host "Installing plugins"
     .$binPath\rabbitmq-plugins.bat enable rabbitmq_management
 
