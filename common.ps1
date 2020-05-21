@@ -41,7 +41,13 @@ function Install() {
             Invoke-WebRequest "http://erlang.org/download/otp_win64_$erLang.exe" -OutFile $destFile
         }
         Write-Host "Installing Erlang"
-        & $destFile | Out-Null
+        ##& $destFile | Out-Null
+        $ags = "/S /D=$drive" + ":\Program Files\er10.3"
+        Write-Host "$destFile  $ags"
+        Start-Process -Wait $destFile  $ags         
+        $erHome = ((Get-ChildItem HKLM:\SOFTWARE\Wow6432Node\Ericsson\Erlang)[0] | Get-ItemProperty).'(default)'
+    }
+    else {
         $erHome = ((Get-ChildItem HKLM:\SOFTWARE\Wow6432Node\Ericsson\Erlang)[0] | Get-ItemProperty).'(default)'
     }
     $env:ERLANG_HOME = [System.Environment]::GetEnvironmentVariable("ERLANG_HOME", "Machine")
@@ -65,10 +71,32 @@ function Install() {
     If (Get-Service "RabbitmQ" -ErrorAction SilentlyContinue) {
     }
     else {
-    
+        $rabInstalledKey = Get-Item HKLM:\SOFTWARE\Ericsson\Erlang\ErlSrv\1.1\RabbitMQ -ErrorAction SilentlyContinue   
+        if ( $rabInstalledKey -ne $null)
+        {
+            Remove-Item HKLM:\SOFTWARE\Ericsson\Erlang\ErlSrv\1.1\RabbitMQ -ErrorAction SilentlyContinue   
+        }
         Write-Host "Installing RabbitMQ"
+        $ags = "/S /SD /D=$drive" + ":\Program Files\RabbitMQ Server"
+        Write-Host "$destFile  $ags"
+        $timeouted = $null 
+        $proc = Start-Process  $destFile  $ags  -PassThru
+        $proc | Wait-Process -Timeout 30 -ErrorAction SilentlyContinue -ErrorVariable timeouted
+        if ($timeouted)
+        {
+            # terminate the process
+            $proc | kill
     
-        & $destFile | Out-Null
+            # update internal error counter
+        }
+        elseif ($proc.ExitCode -ne 0)
+        {
+            # update internal error counter
+            Write-Host $proc.ExitCode
+        }
+        ##Wait-Process -Timeout 300 -Name $installProc
+
+        # & $destFile | Out-Null
     }
     
     Write-Host "Erlang home $env:ERLANG_HOME"

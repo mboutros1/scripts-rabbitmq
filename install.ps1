@@ -17,8 +17,8 @@ Write-Host "Erlang home $env:ERLANG_HOME"
 Write-Host "Waiting for node to warm up"
 Start-Sleep -Seconds 35
 Write-Host "Setting up main user"
-.$binPath\rabbitmqctl add_user mainuser mainuser
-.$binPath\rabbitmqctl set_user_tags mainuser administrator
-.$binPath\rabbitmqctl set_permissions -p / mainuser ".*" ".*" ".*"
+.$binPath\rabbitmqctl.bat add_user mainuser mainuser
+.$binPath\rabbitmqctl.bat set_user_tags mainuser administrator
+.$binPath\rabbitmqctl.bat set_permissions -p / mainuser ".*" ".*" ".*"
  
  
