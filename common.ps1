@@ -111,7 +111,7 @@ function Install() {
     Write-Host "Waiting for node to warm up"
     Start-Sleep -Seconds 25
     Write-Host "Setting up main user"
-    .$binPath\rabbitmqctl add_user mainuser mainuser | Out-Null
-    .$binPath\rabbitmqctl set_user_tags mainuser administrator | Out-Null
-    .$binPath\rabbitmqctl set_permissions -p / mainuser ".*" ".*" ".*" | Out-Null
+    .$binPath\rabbitmqctl.bat add_user mainuser mainuser 
+    .$binPath\rabbitmqctl.bat set_user_tags mainuser administrator
+    .$binPath\rabbitmqctl.bat set_permissions -p / mainuser ".*" ".*" ".*"
 }
